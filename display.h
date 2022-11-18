@@ -1,0 +1,20 @@
+#ifndef DISPLAY_H
+#define DISPLAY_H
+
+#include <stdbool.h>
+
+#define ROWS 32
+#define COLS 64
+
+typedef struct Display {
+  int rows;
+  int cols;
+  int scale;
+  bool *memory;
+  SDL_Window *window;
+  SDL_Surface *surface;
+} Display;
+
+Display *init_display(int scale);
+
+#endif
