@@ -2,6 +2,7 @@
 #define DISPLAY_H
 
 #include <stdbool.h>
+#include <SDL2/SDL.h>
 
 #define ROWS 32
 #define COLS 64
