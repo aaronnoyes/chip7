@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+
 #include "display.h"
+#include "cpu.h"
 
 int main(int argc, char *argv[]) {
   if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
@@ -9,13 +11,20 @@ int main(int argc, char *argv[]) {
   }
 
   Display *display = init_display(10);
-  if (display == NULL) {
+  if (!display) {
     printf("Failed to initialize display\n");
     exit(1);
   }
-  draw_pixel(display, 0, 0);
-  draw_pixel(display, 1, 1);
-  render(display);
+
+  CPU *cpu = init_cpu(display);
+  if (!cpu) {
+    printf("Failed to initialize CPU\n");
+    exit(1); 
+  }
+  load_font_sprites(cpu);
+  load_rom(cpu, "roms/BLITZ");
+
+  cycle(cpu);
 
   bool quit = false;
   SDL_Event e;
