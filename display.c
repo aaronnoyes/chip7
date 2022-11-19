@@ -40,9 +40,9 @@ bool draw_pixel(Display *display, int x, int y) {
 }
 
 void clear(Display *display) {
-  Uint32 white = SDL_MapRGB(display->surface->format, 0xff, 0xff, 0xff);
-  SDL_FillRect(display->surface, NULL, white);
-  //SDL_UpdateWindowSurface(display->window);
+  for(int i = 0; i < ROWS*COLS; i++) {
+    display->memory[i] = 0;
+  }
 }
 
 void render(Display *display) {
@@ -51,8 +51,9 @@ void render(Display *display) {
   r.w = display->scale;
   r.h = display->scale;
   Uint32 black = SDL_MapRGB(display->surface->format, 0x00, 0x00, 0x00);
+  Uint32 white = SDL_MapRGB(display->surface->format, 0xff, 0xff, 0xff);
 
-  clear(display);
+  SDL_FillRect(display->surface, NULL, white);
 
   for (int i = 0; i < COLS*ROWS; i++) {
     x = i % COLS;
