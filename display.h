@@ -16,5 +16,8 @@ typedef struct Display {
 } Display;
 
 Display *init_display(int scale);
+bool draw_pixel(Display *display, int x, int y);
+void clear(Display *display);
+void render(Display *display);
 
 #endif

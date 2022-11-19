@@ -9,7 +9,7 @@ Display *init_display(int scale) {
     return NULL;
   }
 
-  display->memory = malloc(ROWS * COLS * sizeof(bool));
+  display->memory = calloc(ROWS * COLS, sizeof(bool));
   if (!display->memory) {
     return NULL;
   }
@@ -29,4 +29,39 @@ Display *init_display(int scale) {
   display->cols = COLS;
 
   return display;
+}
+
+bool draw_pixel(Display *display, int x, int y) {
+  x = x % 64;
+  y = y % 32;
+  int pixel = x + y*COLS;
+  display->memory[pixel] = !display->memory[pixel];
+  return !display->memory[pixel];
+}
+
+void clear(Display *display) {
+  Uint32 white = SDL_MapRGB(display->surface->format, 0xff, 0xff, 0xff);
+  SDL_FillRect(display->surface, NULL, white);
+  //SDL_UpdateWindowSurface(display->window);
+}
+
+void render(Display *display) {
+  int x = 0, y = 0;
+  SDL_Rect r;
+  r.w = display->scale;
+  r.h = display->scale;
+  Uint32 black = SDL_MapRGB(display->surface->format, 0x00, 0x00, 0x00);
+
+  clear(display);
+
+  for (int i = 0; i < COLS*ROWS; i++) {
+    x = i % COLS;
+    y = (int) i / COLS;
+    if (display->memory[i]) {
+      r.x = x*display->scale;
+      r.y = y*display->scale;
+      SDL_FillRect(display->surface, &r, black);
+    }
+  }
+  SDL_UpdateWindowSurface(display->window);
 }

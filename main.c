@@ -13,6 +13,9 @@ int main(int argc, char *argv[]) {
     printf("Failed to initialize display\n");
     exit(1);
   }
+  draw_pixel(display, 0, 0);
+  draw_pixel(display, 1, 1);
+  render(display);
 
   bool quit = false;
   SDL_Event e;
