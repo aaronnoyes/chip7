@@ -5,6 +5,8 @@
 #include "cpu.h"
 
 int main(int argc, char *argv[]) {
+  time_t t;
+
   if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
       printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
       exit(1);
@@ -24,7 +26,7 @@ int main(int argc, char *argv[]) {
   load_font_sprites(cpu);
   load_rom(cpu, "roms/BLITZ");
 
-  cycle(cpu);
+  srand((unsigned) time(&t));
 
   bool quit = false;
   SDL_Event e;
@@ -35,6 +37,8 @@ int main(int argc, char *argv[]) {
         quit = true;
       }
     }
+    cycle(cpu);
+    render(display);
   }
 }
 
