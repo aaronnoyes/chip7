@@ -1,8 +1,10 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
 #include <stdio.h>
 
 #include "display.h"
 #include "cpu.h"
+#include "keyboard.h"
 
 int main(int argc, char *argv[]) {
   time_t t;
@@ -12,13 +14,19 @@ int main(int argc, char *argv[]) {
       exit(1);
   }
 
+  Keyboard *keyboard = init_keyboard();
+  if (!keyboard) {
+    printf("Failed to initialize keyboard\n");
+    exit(1);
+  }
+
   Display *display = init_display(10);
   if (!display) {
     printf("Failed to initialize display\n");
     exit(1);
   }
 
-  CPU *cpu = init_cpu(display);
+  CPU *cpu = init_cpu(display, keyboard);
   if (!cpu) {
     printf("Failed to initialize CPU\n");
     exit(1); 
@@ -36,8 +44,17 @@ int main(int argc, char *argv[]) {
       if( e.type == SDL_QUIT ) {
         quit = true;
       }
+      else if (e.type == SDL_KEYDOWN) {
+        int key = get_key_value(e.key.keysym.sym);
+        on_key_down(keyboard, key);
+      }
+      else if (e.type == SDL_KEYUP) {
+        int key = get_key_value(e.key.keysym.sym);
+        on_key_up(keyboard, key);
+      }
     }
     cycle(cpu);
+    update_timers(cpu);
     render(display);
   }
 }

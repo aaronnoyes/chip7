@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "cpu.h"
+#include "keyboard.h"
 
-CPU *init_cpu(Display *display) {
+CPU *init_cpu(Display *display, Keyboard * keyboard) {
     CPU *cpu = malloc(sizeof(CPU));
     if (!cpu) {
         return NULL;
@@ -15,6 +17,7 @@ CPU *init_cpu(Display *display) {
         return NULL;
     }
 
+    cpu->keyboard = keyboard;
     cpu->display = display;
 
     cpu->stackptr = 0;
@@ -77,6 +80,11 @@ void cycle(CPU *cpu) {
        opcode = (cpu->memory[cpu->pc] << 8 | cpu->memory[cpu->pc+1]);
        execute_instruction(cpu, opcode);
     }
+}
+
+void f(CPU *cpu, int key) {
+  cpu->v[cpu->last_x] = key;
+  cpu->paused = false;
 }
 
 void execute_instruction(CPU *cpu, uint16_t opcode) {
@@ -158,7 +166,7 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
                 break;
             case 0x6:
                 cpu->v[0xF] = cpu->v[x] & 0x1;
-                cpu->v[0x0F00] >>= 1;
+                cpu->v[x] >>= 1;
                 break;
             case 0x7:
                 cpu->v[0xF] = 0;
@@ -169,13 +177,13 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
                 break;
             case 0xE:
                 cpu->v[0xF] = cpu->v[x] & 0x80;
-                cpu->v[0x0F00] <<= 1;
+                cpu->v[x] <<= 1;
                 break;
         }
 
         break;
     case 0x9000:
-        if (cpu->v[x] != cpu->v[x]) {
+        if (cpu->v[x] != cpu->v[y]) {
             cpu->pc += 2;
         }
         break;
@@ -212,8 +220,14 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
     case 0xE000:
         switch (opcode & 0xFF) {
             case 0x9E:
+                if (cpu->keyboard->keys_pressed[cpu->v[x]]) {
+                  cpu->pc += 2;
+                }
                 break;
             case 0xA1:
+                if (!cpu->keyboard->keys_pressed[cpu->v[x]]) {
+                  cpu->pc += 2;
+                }
                 break;
         }
 
@@ -224,6 +238,8 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
                 cpu->v[x] = cpu->delayTimer;
                 break;
             case 0x0A:
+                cpu->paused = true;
+                cpu->keyboard->on_next_key_press = &f;
                 break;
             case 0x15:
                 cpu->delayTimer = cpu->v[x];
