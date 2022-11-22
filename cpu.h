@@ -12,6 +12,7 @@ typedef struct CPU {
     uint8_t *memory;
     uint8_t v[16];
     int last_x;
+    void (*on_next_key_press)(void *, int);
     int i;
     int delayTimer, soundTimer;
     int pc;
@@ -26,5 +27,8 @@ void load_rom(CPU *cpu, char romName[]);
 void update_timers(CPU *cpu);
 void cycle(CPU *cpu);
 void execute_instruction(CPU *cpu, uint16_t opcode);
+
+void on_key_down(CPU *cpu, uint8_t key);
+void on_key_up(CPU *cpu, uint8_t key);
 
 #endif

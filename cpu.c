@@ -16,6 +16,8 @@ CPU *init_cpu(Display *display, Keyboard * keyboard) {
     if (!cpu->memory) {
         return NULL;
     }
+    
+    cpu->on_next_key_press = NULL;
 
     cpu->keyboard = keyboard;
     cpu->display = display;
@@ -27,6 +29,23 @@ CPU *init_cpu(Display *display, Keyboard * keyboard) {
     cpu->delayTimer = 0;
 
     return cpu;
+}
+
+void on_key_down(CPU *cpu, uint8_t key) {
+  cpu->keyboard->keys_pressed[key] = true; 
+  if (cpu->on_next_key_press != NULL && key) {
+    cpu->on_next_key_press(cpu, key);
+    cpu->on_next_key_press = NULL;
+  }
+}
+
+void on_key_up(CPU *cpu, uint8_t key) {
+  cpu->keyboard->keys_pressed[key] = false; 
+}
+
+void next_key_press(CPU *cpu, int key) {
+  cpu->v[cpu->last_x] = key;
+  cpu->paused = false;
 }
 
 int load_font_sprites(CPU *cpu) {
@@ -92,6 +111,7 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
 
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
+    int sum = 0;
 
     switch (opcode & 0xF000) {
     case 0x0000:
@@ -115,12 +135,12 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
         cpu->pc = opcode & 0x0FFF;
         break;
     case 0x3000:
-        if (cpu->v[x] == opcode & 0x00FF) {
+        if (cpu->v[x] == (opcode & 0x00FF)) {
             cpu->pc += 2;
         }
         break;
     case 0x4000:
-        if (cpu->v[x] != opcode & 0x00FF) {
+        if (cpu->v[x] != (opcode & 0x00FF)) {
             cpu->pc += 2;
         }
         break;
@@ -141,28 +161,28 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
                 cpu->v[x] = cpu->v[y];
                 break;
             case 0x1:
-                cpu->v[x] = cpu->v[x] | cpu->v[y];
+                cpu->v[x] = (cpu->v[x] | cpu->v[y]);
                 break;
             case 0x2:
-                cpu->v[x] = cpu->v[x] & cpu->v[y];
+                cpu->v[x] = (cpu->v[x] & cpu->v[y]);
                 break;
             case 0x3:
-                cpu->v[x] = cpu->v[x] ^ cpu->v[y];
+                cpu->v[x] = (cpu->v[x] ^ cpu->v[y]);
                 break;
             case 0x4:
-                int x = cpu->v[x] + cpu->v[y];
+                sum = (cpu->v[x] + cpu->v[y]);
                 cpu->v[0xF] = 0;
-                if (x > 255) {
+                if (sum > 255) {
                     cpu->v[0xF] = 1;
                 }
-                cpu->v[x] = x & 0xFFFF;
+                cpu->v[x] = sum & 0xFFFF;
                 break;
             case 0x5:
                 cpu->v[0xF] = 0;
                 if (cpu->v[x] > cpu->v[y]) {
                     cpu->v[0xF] = 1;
                 }
-                cpu->v[x] = cpu->v[x] - cpu->v[y];
+                cpu->v[x] = (cpu->v[x] - cpu->v[y]);
                 break;
             case 0x6:
                 cpu->v[0xF] = cpu->v[x] & 0x1;
@@ -173,7 +193,7 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
                 if (cpu->v[x] < cpu->v[y]) {
                     cpu->v[0xF] = 1;
                 }
-                cpu->v[x] = cpu->v[y] - cpu->v[x];
+                cpu->v[x] = (cpu->v[y] - cpu->v[x]);
                 break;
             case 0xE:
                 cpu->v[0xF] = cpu->v[x] & 0x80;
@@ -239,7 +259,7 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
                 break;
             case 0x0A:
                 cpu->paused = true;
-                cpu->keyboard->on_next_key_press = &f;
+                cpu->on_next_key_press = &next_key_press;
                 break;
             case 0x15:
                 cpu->delayTimer = cpu->v[x];

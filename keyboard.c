@@ -12,8 +12,6 @@ Keyboard *init_keyboard() {
     keyboard->keys_pressed[i] = 0;
   }
 
-  keyboard->on_next_key_press = NULL;
-
   return keyboard;
 }
 
@@ -74,14 +72,3 @@ uint8_t get_key_value(SDL_KeyCode key) {
 }
 
 
-void on_key_down(Keyboard *keyboard, uint8_t key) {
-  keyboard->keys_pressed[key] = true; 
-  if (keyboard->on_next_key_press != NULL && key) {
-    keyboard->on_next_key_press(key);
-    keyboard->on_next_key_press = NULL;
-  }
-}
-
-void on_key_up(Keyboard *keyboard, uint8_t key) {
-  keyboard->keys_pressed[key] = false; 
-}
