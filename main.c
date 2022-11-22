@@ -46,11 +46,15 @@ int main(int argc, char *argv[]) {
       }
       else if (e.type == SDL_KEYDOWN) {
         int key = get_key_value(e.key.keysym.sym);
-        on_key_down(cpu, key);
+        if(key >= 0) {
+          on_key_down(cpu, key);
+        }
       }
       else if (e.type == SDL_KEYUP) {
         int key = get_key_value(e.key.keysym.sym);
-        on_key_up(cpu, key);
+        if(key >= 0) {
+          on_key_down(cpu, key);
+        }
       }
     }
     cycle(cpu);
