@@ -12,7 +12,8 @@ typedef struct CPU {
     int i;
     int delayTimer, soundTimer;
     int pc;
-    uint16_t stack[16];
+    uint16_t stack[64];
+    int stackptr;
     bool paused;
 } CPU;
 

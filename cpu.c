@@ -15,6 +15,10 @@ CPU *init_cpu(Display *display) {
         return NULL;
     }
 
+    cpu->display = display;
+
+    cpu->stackptr = 0;
+
     cpu->pc = 0x200;
 
     return cpu;
@@ -69,64 +73,133 @@ void cycle(CPU *cpu) {
 
 void execute_instruction(CPU *cpu, uint16_t opcode) {
     cpu->pc += 2;
+
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
+
     switch (opcode & 0xF000) {
     case 0x0000:
         switch (opcode) {
             case 0x00E0:
+                clear(cpu->display);
                 break;
             case 0x00EE:
+                cpu->pc = cpu->stack[cpu->stackptr];
+                cpu->stackptr--;
                 break;
         }
 
         break;
     case 0x1000:
+        cpu->pc = opcode & 0x0FFF;
         break;
     case 0x2000:
+        cpu->stackptr++;
+        cpu->stack[cpu->stackptr] = cpu->pc;
+        cpu->pc = opcode & 0x0FFF;
         break;
     case 0x3000:
+        if (cpu->v[x] == opcode & 0x00FF) {
+            cpu->pc += 2;
+        }
         break;
     case 0x4000:
+        if (cpu->v[x] != opcode & 0x00FF) {
+            cpu->pc += 2;
+        }
         break;
     case 0x5000:
+        if (cpu->v[x] == cpu->v[y]) {
+            cpu->pc += 2;
+        }
         break;
     case 0x6000:
+        cpu->v[x] = opcode & 0x00FF;
         break;
     case 0x7000:
+        cpu->v[x] = cpu->v[x] + opcode & 0x00FF;
         break;
     case 0x8000:
         switch (opcode & 0xF) {
             case 0x0:
+                cpu->v[x] = cpu->v[y];
                 break;
             case 0x1:
+                cpu->v[x] = cpu->v[x] | cpu->v[y];
                 break;
             case 0x2:
+                cpu->v[x] = cpu->v[x] & cpu->v[y];
                 break;
             case 0x3:
+                cpu->v[x] = cpu->v[x] ^ cpu->v[y];
                 break;
             case 0x4:
+                int x = cpu->v[x] + cpu->v[y];
+                cpu->v[0xF] = 0;
+                if (x > 255) {
+                    cpu->v[0xF] = 1;
+                }
+                cpu->v[x] = x & 0xFFFF;
                 break;
             case 0x5:
+                cpu->v[0xF] = 0;
+                if (cpu->v[x] > cpu->v[y]) {
+                    cpu->v[0xF] = 1;
+                }
+                cpu->v[x] = cpu->v[x] - cpu->v[y];
                 break;
             case 0x6:
+                cpu->v[0xF] = cpu->v[x] & 0x1;
+                cpu->v[0x0F00] >>= 1;
                 break;
             case 0x7:
+                cpu->v[0xF] = 0;
+                if (cpu->v[x] < cpu->v[y]) {
+                    cpu->v[0xF] = 1;
+                }
+                cpu->v[x] = cpu->v[y] - cpu->v[x];
                 break;
             case 0xE:
+                cpu->v[0xF] = cpu->v[x] & 0x80;
+                cpu->v[0x0F00] <<= 1;
                 break;
         }
 
         break;
     case 0x9000:
+        if (cpu->v[x] != cpu->v[x]) {
+            cpu->pc += 2;
+        }
         break;
     case 0xA000:
+        cpu->i = opcode & 0x0FFF;
         break;
     case 0xB000:
+        cpu->pc = cpu->v[0] + (opcode & 0x0FFF);
         break;
     case 0xC000:
+        uint8_t r = rand() % 256;
+        cpu->v[x] = r & (opcode & 0x00FF);
         break;
     case 0xD000:
+        int width = 8;
+        int height = (opcode & 0xF);
+
+        cpu->v[0xF] = 0;
+
+        for (int row = 0; row < height; row++) {
+            int sprite = cpu->memory[cpu->i + row];
+
+            for (int col = 0; col < width; col++) {
+                if ((sprite & 0x80) > 0) {
+                    if(draw_pixel(cpu->display, cpu->v[x] + col, cpu->v[y] + row)) {
+                        cpu->v[0xF] = 1;
+                    }
+                }
+
+                sprite <<= 1;
+            }
+        }
         break;
     case 0xE000:
         switch (opcode & 0xFF) {
@@ -148,14 +221,25 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
             case 0x18:
                 break;
             case 0x1E:
+                cpu->i += cpu->v[x];
                 break;
             case 0x29:
+                cpu->i = cpu->v[x] * 5;
                 break;
             case 0x33:
+                cpu->memory[cpu->i] = (cpu->v[x] / 100);
+                cpu->memory[cpu->i + 1] = ((cpu->v[x] % 100) / 10);
+                cpu->memory[cpu->i + 2] = (cpu->v[x] % 10);
                 break;
             case 0x55:
+                for (int registerIndex = 0; registerIndex <= x; registerIndex++) {
+                    cpu->memory[cpu->i + registerIndex] = cpu->v[registerIndex];
+                }
                 break;
             case 0x65:
+                for (int registerIndex = 0; registerIndex <= x; registerIndex++) {
+                    cpu->v[registerIndex] = cpu->memory[cpu->i + registerIndex];
+                }
                 break;
         }
 
