@@ -21,6 +21,8 @@ CPU *init_cpu(Display *display) {
 
     cpu->pc = 0x200;
 
+    cpu->delayTimer = 0;
+
     return cpu;
 }
 
@@ -61,6 +63,12 @@ void load_rom(CPU *cpu, char romName[]) {
     fread(cpu->memory + 0x200, sizeof(uint8_t), fileSize, file);
 
     fclose(file);
+}
+
+void update_timers(CPU *cpu) {
+    if (cpu->delayTimer > 0) {
+        cpu->delayTimer -=1;
+    }
 }
 
 void cycle(CPU *cpu) {
@@ -213,10 +221,12 @@ void execute_instruction(CPU *cpu, uint16_t opcode) {
     case 0xF000:
         switch (opcode & 0xFF) {
             case 0x07:
+                cpu->v[x] = cpu->delayTimer;
                 break;
             case 0x0A:
                 break;
             case 0x15:
+                cpu->delayTimer = cpu->v[x];
                 break;
             case 0x18:
                 break;

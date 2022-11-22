@@ -20,6 +20,7 @@ typedef struct CPU {
 CPU *init_cpu(Display *display);
 int load_font_sprites(CPU *cpu);
 void load_rom(CPU *cpu, char romName[]);
+void update_timers(CPU *cpu);
 void cycle(CPU *cpu);
 void execute_instruction(CPU *cpu, uint16_t opcode);
 
